@@ -34,22 +34,26 @@ direwin <- filter(playershero, radiant_win == "False")
 direloss <- filter(playershero, radiant_win == "True")
 
 #create hero pair permutations for radiant and dire of each match
-test<- combn(Ttest1, 2, simplify=F)
+test<- apply(Ttest[,3:7], 1, function(x) combn(x, 2, simplify = F))
 df <- data.frame(matrix(unlist(test),ncol = 2, byrow= T))
 
-combdf <- unlist(test, recursive = FALSE)
-df<- do.call("rbind", combdf)
+#add back the match_id and radiant_win and clean up columns
+colnames(df) <- c("Hero1", "Hero2")
+df$match_id <- NA
+df$radiant_win <- NA
+df <- df[,c(3,4,1,2)]
 
+#add back in match_ids
+for (i in 1:length(Ttest$match_id)){
+  x = i * 10 -9
+df[x:(x+9),1] <- paste(Ttest[i,1]);
+}
 
-
-
-
-
-
-
-
-
-
+#add back in radiant_win
+for (i in 1:length(Ttest$radiant_win)){
+  x = i * 10 -9
+  df[x:(x+9),2] <- paste(Ttest[i,2]);
+}
 
 
 
