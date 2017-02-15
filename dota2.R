@@ -55,8 +55,40 @@ for (i in 1:length(Ttest$radiant_win)){
   df[x:(x+9),2] <- paste(Ttest[i,2]);
 }
 
+#get combination frequencies
+ptm <- proc.time()
+
+comb1 <- df
+comb2 <- df[,c(1,2,4,3)]
+colnames(comb2) <- c("match_id", "radiant_win", "Hero1", "Hero2")
+combcount <- rbind(comb1, comb2)
+combcount <- plyr::count(combcount, vars = c("Hero1", "Hero2"))
+#add identifiers to each column for using the %in% function  later
+comb1$colid <- paste(comb1$Hero1, comb1$Hero2, sep=",")
+combcount$colid <- paste(combcount$Hero1, combcount$Hero2, sep=",")
+combcount <- combcount[combcount$colid %in% comb1$colid,]
+combcount$colid <- NULL
+
+proc.time() - ptm
 
 
+#apply version of combination frequencies
+#ptm <- proc.time()
 
+#df$Hero1 <- as.numeric(as.character(df$Hero1))
+#df$Hero2 <- as.numeric(as.character(df$Hero2))
+#df$min <- apply(df[,3:4],1,min)
+#df$max <- apply(df[,3:4],1,max)
+#df$Hero1 <- NULL
+#df$Hero2 <- NULL
+#colnames(df) <- c("match_id", "radiant_win", "Hero1", "Hero2")
+#combcount <- plyr::count(df, vars = c("Hero1", "Hero2"))
+##add identifiers to each column for using the %in% function  later
+##comb1$colid <- paste(comb1$Hero1, comb1$Hero2, sep=",")
+##combcount$colid <- paste(combcount$Hero1, combcount$Hero2, sep=",")
+##combcount <- combcount[combcount$colid %in% comb1$colid,]
+##combcount$colid <- NULL
+
+#proc.time() - ptm
 
 #lookup table for hero names
