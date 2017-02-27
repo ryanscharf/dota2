@@ -23,11 +23,12 @@ playershero <- spread(playershero, player_slot, hero_id)
 radiantwinrate <- matrix(data = NA, nrow = 112, ncol = 112)
 colnames(radiantwinrate) <- c(hero_names$hero_id)
 rownames(radiantwinrate) <- c(hero_names$hero_id)
-direwinrate <- matrix(data = NA, nrow= 112, ncol = 11)2
+direwinrate <- matrix(data = NA, nrow= 112, ncol = 112)
 colnames(direwinrate) <- c(hero_names$hero_id)
 rownames(direwinrate) <- c(hero_names$hero_id)
 
 #create subsets for radiant wins/losses, and dire wins/losses
+library("dplyr")
 radiantwin <- filter(playershero, radiant_win == "True")
 radiantloss <- filter(playershero, radiant_win == "False")
 direwin <- filter(playershero, radiant_win == "False")
