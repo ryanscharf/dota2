@@ -179,7 +179,7 @@ overallwr <- mutate(overallwr, win_percentage = wins / num_of_picks)
 
 
 
-
+library("ggplot2")
 library("reshape2")
 library("viridis")
 library("scales")
@@ -191,12 +191,10 @@ library("ggthemes")
    
    ##plottin
 gg <- ggplot(overallwr, aes(x=Hero1, y=Hero2, fill=win_percentage)) + geom_tile(color="white", size=0.4) + 
-  scale_fill_viridis(name="# of Wins", label=comma) + coord_equal() + theme_tufte(base_family="Helvetica") +
-  scale_x_continuous(breaks = unique(rwcounts$Hero1), position = "top")  + 
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
-  scale_y_continuous(trans = "reverse", breaks = unique(rwcounts$Hero2), position = "top") +
-  theme(plot.background = element_rect(fill = 'grey'), panel.grid.major = element_line(color= "black"))
-
+   scale_fill_viridis(name="# of Wins", label=comma) + coord_equal() + theme_tufte(base_family="Helvetica") +
+   scale_x_continuous(breaks = unique(rwcounts$Hero1), position = "top", sec.axis = dup_axis())  + 
+   scale_y_continuous(trans = "reverse", breaks = unique(rwcounts$Hero2), position = "top", sec.axis = dup_axis()) +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1), plot.background = element_rect(fill = 'grey'), panel.grid.major = element_line(color= "black"))
 
 
 gg
