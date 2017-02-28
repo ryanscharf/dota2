@@ -66,6 +66,8 @@ for (i in 1:length(direloss$radiant_win)){
 
 direlossvals <- df
 
+
+
 #get combination frequencies through column flipping and comparison
 #####DOESN'T WORK#########
 
@@ -80,31 +82,38 @@ direlossvals <- df
 #combcount <- combcount[combcount$colid %in% comb1$colid,]
 #combcount$colid <- NULL
 
-
-
+########
 #apply version of combination frequencies
+#nonworkign method
+#rwcounts <- radiantwinvals
+#rlcounts <- radiantlossvals
+#dwcounts <- direwinvals
+#dlcounts <- direlossvals
 
-countperms <- function(xz){
-xz$Hero1 <- as.numeric(as.character(xz$Hero1))
-xz$Hero2 <- as.numeric(as.character(xz$Hero2))
-xz$min <- apply(xz[,3:4],1,min)
-xz$max <- apply(xz[,3:4],1,max)
-xz$Hero1 <- NULL
-xz$Hero2 <- NULL
-colnames(xz) <- c("match_id", "radiant_win", "Hero1", "Hero2")
-combcount <- plyr::count(xz, vars = c("Hero1", "Hero2"))
+#countperms <- function(xz){
+#xz$Hero1 <- as.numeric(as.character(xz$Hero1))
+#xz$Hero2 <- as.numeric(as.character(xz$Hero2))
+#xz$min <- apply(xz[,3:4],1,min)
+#xz$max <- apply(xz[,3:4],1,max)
+#xz$Hero1 <- NULL
+#xz$Hero2 <- NULL
+#colnames(xz) <- c("match_id", "radiant_win", "Hero1", "Hero2")
+#xz <- plyr::count(xz, vars = c("Hero1", "Hero2"))
+#xz <<- xz
+#assign(paste("count", deparse(substitute(xz)) , sep="_"), xz, envir=.GlobalEnv)
+#}
 
-assign(paste("count", deparse(substitute(xz)) , sep="_"), xz, envir=.GlobalEnv)
-}
+#countperms(rwcounts)
+#countperms(rlcounts)
+#countperms(dwcounts)
+#countperms(dlcounts)
 
-wtf <- function(xz){
-xz <- plyr::count(xz$x1)
-assign(paste("count", deparse(substitute(xz)) , sep=""), xz, envir=.GlobalEnv)
-}
 
-myfunc <- function(v1) {
-  deparse(substitute(v1))
-}
+#example function of dynamic renaming that DOESN'T WORK
+#wtf <- function(xz){
+#xz <- plyr::count(xz$x1)
+#assign(paste("count", deparse(substitute(xz)) , sep=""), xz, envir=.GlobalEnv)
+#}
 
 ######long dumb version of permutation frequencies
 ###############################################################
@@ -153,20 +162,35 @@ dlcounts <- direlossvals
   dlcounts <- arrange(dlcounts, desc(freq))  
   
   
+overallwins <- merge(rwcounts, dwcounts, by=c("Hero1", "Hero2"))
+overallwins$freq <- rowSums(overallwins[,3:4])
+overallwins[,3:4] <- NULL
+  
+overallosses <- merge(rlcounts, dlcounts, by=c("Hero1", "Hero2"))
+overallosses$freq <- rowSums(overallosses[,3:4])
+overallosses[,3:4] <- NULL
+
+overallwr <- merge(overallwins, overallosses, by=c("Hero1", "Hero2"))
+colnames(overallwr) <- c("Hero1", "Hero2", "wins", "losses")
+overallwr$num_of_picks <- rowSums(overallwr[,3:4])
+overallwr <- mutate(overallwr, win_percentage = wins / num_of_picks)
+  
+  
+
+
+
 
 library("reshape2")
 library("viridis")
 library("scales")
 library("ggthemes")
    radiant_pairing_winm <- reshape2::acast(rwcounts, Hero1~Hero2, value.var = "freq", drop = FALSE)
-  
-
 
    
    
    
    ##plottin
-gg <- ggplot(rwcounts, aes(x=Hero1, y=Hero2, fill=freq)) + geom_tile(color="white", size=0.4) + 
+gg <- ggplot(overallwr, aes(x=Hero1, y=Hero2, fill=win_percentage)) + geom_tile(color="white", size=0.4) + 
   scale_fill_viridis(name="# of Wins", label=comma) + coord_equal() + theme_tufte(base_family="Helvetica") +
   scale_x_continuous(breaks = unique(rwcounts$Hero1), position = "top")  + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
