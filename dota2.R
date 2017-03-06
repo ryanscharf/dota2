@@ -67,6 +67,25 @@ for (i in 1:length(direloss$radiant_win)){
 direlossvals <- df
 
 
+#i need one big list of all the wins and losses without counting up anything
+winformation <- radiantwinvals
+colnames(winformation) <- c("match_id", "Win", "Hero1", "Hero2")
+df <- direlossvals
+colnames(df) <- c("match_id", "Win", "Hero1", "Hero2")
+df$Win <- "False"
+winformation <- rbind(winformation, df)
+df <- direwinvals
+colnames(df) <- c("match_id", "Win", "Hero1", "Hero2")
+winformation <- rbind(winformation, df)
+df <- radiantlossvals
+colnames(df) <- c("match_id", "Win", "Hero1", "Hero2")
+df$Win <- "False"
+winformation <- rbind(winformation, df)
+
+ptm <- proc.time()
+write.csv(winformation, "winformation.csv")
+proc.time() - ptm
+
 
 #get combination frequencies through column flipping and comparison
 #####DOESN'T WORK#########
@@ -191,7 +210,7 @@ library("ggthemes")
    
    ##plottin
 gg <- ggplot(overallwr, aes(x=Hero1, y=Hero2, fill=win_percentage)) + geom_tile(color="white", size=0.4) + 
-   scale_fill_viridis(name="# of Wins", label=comma) + coord_equal() + theme_tufte(base_family="Helvetica") +
+   scale_fill_viridis(name="win rate (%)", label=comma) + coord_equal() + theme_tufte(base_family="Helvetica") +
    scale_x_continuous(breaks = unique(rwcounts$Hero1), position = "top", sec.axis = dup_axis())  + 
    scale_y_continuous(trans = "reverse", breaks = unique(rwcounts$Hero2), position = "top", sec.axis = dup_axis()) +
    theme(axis.text.x = element_text(angle = 90, hjust = 1), plot.background = element_rect(fill = 'grey'), panel.grid.major = element_line(color= "black"))
