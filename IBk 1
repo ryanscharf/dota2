@@ -101,4 +101,68 @@ Weighted Avg.    0.740    0.740    0.548      0.740    0.630      0.000    0.587
       a      b   <-- classified as
       0  87662 |      a = TRUE
       0 250098 |      b = FALSE
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+   === Run information ===
+
+Scheme:       weka.classifiers.lazy.IBk -K 11 -W 0 -A "weka.core.neighboursearch.LinearNNSearch -A \"weka.core.EuclideanDistance -R first-last\""
+Relation:     winformation-weka.filters.unsupervised.attribute.NumericToNominal-R3-4
+Instances:    844400
+Attributes:   4
+              match_id
+              Win
+              Hero1
+              Hero2
+Test mode:    split 60.0% train, remainder test
+
+=== Classifier model (full training set) ===
+
+IB1 instance-based classifier
+using 11 nearest neighbour(s) for classification
+
+
+Time taken to build model: 0.12 seconds
+
+=== Evaluation on test split ===
+
+Time taken to test model on test split: 17946.74 seconds
+
+=== Summary ===
+
+Correctly Classified Instances      244176               72.2928 %
+Incorrectly Classified Instances     93584               27.7072 %
+Kappa statistic                          0.0486
+Mean absolute error                      0.3709
+Root mean squared error                  0.4484
+Relative absolute error                 96.4709 %
+Root relative squared error            102.2841 %
+Total Number of Instances           337760     
+
+=== Detailed Accuracy By Class ===
+
+                 TP Rate  FP Rate  Precision  Recall   F-Measure  MCC      ROC Area  PRC Area  Class
+                 0.093    0.056    0.367      0.093    0.149      0.065    0.565     0.300     TRUE
+                 0.944    0.907    0.748      0.944    0.835      0.065    0.565     0.773     FALSE
+Weighted Avg.    0.723    0.686    0.649      0.723    0.657      0.065    0.565     0.650     
+
+=== Confusion Matrix ===
+
+      a      b   <-- classified as
+   8169  79493 |      a = TRUE
+  14091 236007 |      b = FALSE
+
+   
 
