@@ -76,13 +76,15 @@ df$Win <- "False"
 winformation <- rbind(winformation, df)
 df <- direwinvals
 colnames(df) <- c("match_id", "Win", "Hero1", "Hero2")
+df$Win <- "True"
 winformation <- rbind(winformation, df)
 df <- radiantlossvals
 colnames(df) <- c("match_id", "Win", "Hero1", "Hero2")
 df$Win <- "False"
 winformation <- rbind(winformation, df)
+winformation <- arrange(winformation, match_id)
 
-ptm <- proc.time()
+aptm <- proc.time()
 write.csv(winformation, "winformation.csv")
 proc.time() - ptm
 
