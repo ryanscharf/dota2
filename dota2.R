@@ -350,6 +350,7 @@ df <- radiantlossvals
 colnames(df) <- c("match_id", "Win", "Hero1", "Hero2")
 df$Win <- "False"
 test_set <- rbind(test_set, df)
+test_set$match_id <- as.numeric(as.character(test_set$match_id))
 test_set <- arrange(test_set, match_id)
 
 ptm <- proc.time()
