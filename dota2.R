@@ -226,4 +226,134 @@ gg
 #radiant win%
   21922/(20298+21922)
   
+  
+  
+#let's create a test set of data from test_player.csv and test_labels.csv
+  library("tidyr")
+test_set <- test_labels
+#remove account_ids
+test_player <- test_player[,-2]
+#remove matches with bad hero_ids (15 games)
+badheroids <- test_player[test_player$hero_id == 0, ]
+test_player <- test_player[!test_player$match_id %in% badheroids$match_id,]
+test_set <- test_set[!test_set$match_id %in% badheroids$match_id,]
+#spread data to wide format
+test_player <- spread(test_player, player_slot, hero_id)
+#add match outcome from test_set
+test_set <- merge(test_set, test_player, by=match_id)
+test_set <- test_set[,-1]
+test_set <- arrange(test_set, match_id)
+
+#create subsets for radiant wins/losses, and dire wins/losses
+radiantwin <- filter(test_set, radiant_win == "1")
+radiantloss <- filter(test_set, radiant_win == "0")
+direwin <- filter(test_set, radiant_win == "0")
+direloss <- filter(test_set, radiant_win == "1")
+
+#get rid of irrelevant team for each category
+radiantwin[,8:12]<- NULL
+radiantloss[,8:12] <- NULL
+direwin[,3:7] <- NULL
+direloss[,3:7] <- NULL
+
+#create hero pair permutations for radiant and dire of each match
+##radiantwin
+test<- apply(radiantwin[,3:7], 1, function(x) combn(x, 2, simplify = F))
+df <- data.frame(matrix(unlist(test),ncol = 2, byrow= T))
+#add back the match_id and radiant_win and clean up columns
+colnames(df) <- c("Hero1", "Hero2")
+df$match_id <- NA
+df$radiant_win <- NA
+df <- df[,c(3,4,1,2)]
+#add back in match_ids
+for (i in 1:length(radiantwin$match_id)){
+  x = i * 10 -9
+  df[x:(x+9),1] <- paste(radiantwin[i,1]);
+}
+#add back in radiant_win
+for (i in 1:length(radiantwin$radiant_win)){
+  x = i * 10 -9
+  df[x:(x+9),2] <- paste(radiantwin[i,2]);
+}
+radiantwinvals <- df
+##radiantloss
+test<- apply(radiantloss[,3:7], 1, function(x) combn(x, 2, simplify = F))
+df <- data.frame(matrix(unlist(test),ncol = 2, byrow= T))
+#add back the match_id and radiant_win and clean up columns
+colnames(df) <- c("Hero1", "Hero2")
+df$match_id <- NA
+df$radiant_win <- NA
+df <- df[,c(3,4,1,2)]
+#add back in match_ids
+for (i in 1:length(radiantloss$match_id)){
+  x = i * 10 -9
+  df[x:(x+9),1] <- paste(radiantloss[i,1]);
+}
+#add back in radiant_win
+for (i in 1:length(radiantloss$radiant_win)){
+  x = i * 10 -9
+  df[x:(x+9),2] <- paste(radiantloss[i,2]);
+}
+radiantlossvals <- df
+##direwin
+test<- apply(direwin[,3:7], 1, function(x) combn(x, 2, simplify = F))
+df <- data.frame(matrix(unlist(test),ncol = 2, byrow= T))
+#add back the match_id and radiant_win and clean up columns
+colnames(df) <- c("Hero1", "Hero2")
+df$match_id <- NA
+df$radiant_win <- NA
+df <- df[,c(3,4,1,2)]
+#add back in match_ids
+for (i in 1:length(direwin$match_id)){
+  x = i * 10 -9
+  df[x:(x+9),1] <- paste(direwin[i,1]);
+}
+#add back in radiant_win
+for (i in 1:length(direwin$radiant_win)){
+  x = i * 10 -9
+  df[x:(x+9),2] <- paste(direwin[i,2]);
+}
+direwinvals <- df
+##direloss
+test<- apply(direloss[,3:7], 1, function(x) combn(x, 2, simplify = F))
+df <- data.frame(matrix(unlist(test),ncol = 2, byrow= T))
+#add back the match_id and radiant_win and clean up columns
+colnames(df) <- c("Hero1", "Hero2")
+df$match_id <- NA
+df$radiant_win <- NA
+df <- df[,c(3,4,1,2)]
+#add back in match_ids
+for (i in 1:length(direloss$match_id)){
+  x = i * 10 -9
+  df[x:(x+9),1] <- paste(direloss[i,1]);
+}
+#add back in radiant_win
+for (i in 1:length(direloss$radiant_win)){
+  x = i * 10 -9
+  df[x:(x+9),2] <- paste(direloss[i,2]);
+}
+direlossvals <- df
+
+#i need one big list of all the wins and losses without counting up anything
+test_set <- radiantwinvals
+colnames(test_set) <- c("match_id", "Win", "Hero1", "Hero2")
+test_set$Win <- "True"
+df <- direlossvals
+colnames(df) <- c("match_id", "Win", "Hero1", "Hero2")
+df$Win <- "False"
+test_set <- rbind(test_set, df)
+df <- direwinvals
+colnames(df) <- c("match_id", "Win", "Hero1", "Hero2")
+df$Win <- "True"
+test_set <- rbind(test_set, df)
+df <- radiantlossvals
+colnames(df) <- c("match_id", "Win", "Hero1", "Hero2")
+df$Win <- "False"
+test_set <- rbind(test_set, df)
+test_set <- arrange(test_set, match_id)
+
+ptm <- proc.time()
+write.csv(test_set, "test_set.csv")
+proc.time() - ptm
+
 #lookup table for hero names
