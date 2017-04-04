@@ -357,4 +357,50 @@ ptm <- proc.time()
 write.csv(test_set, "test_set.csv")
 proc.time() - ptm
 
+
+##running knn
+w_knn<-winformation
+w_knn <- w_knn[,-1]
+w_knn[,2] <- as.factor(w_knn[,2])
+w_knn[,3] <- as.factor(w_knn[,3])
+t_knn <- test_set[,-1]
+t_knn[,2] <- as.factor(t_knn[,2])
+t_knn[,3] <- as.factor(t_knn[,3])
+
+#shuffling up the rowws
+set.seed(34958)
+gp <- runif(nrow(w_knn))
+w_knn <- w_knn[order(gp),]
+gp <- runif(nrow(t_knn))
+t_knn <- t_knn[order(gp),]
+train_target <- w_knn[,1]
+test_target <- t_knn[,1]
+m1 <- knn(train = w_knn, test = t_knn, cl=train_target, k = 13)
+
+
+
+#restructure for association rules
+#w1 <- as.data.frame(matrix(0, ncol = 111, nrow = length(winformation$match_id)))
+#colnames(w1)[1] <- "Win"
+#a1 <- unique(winformation$Hero1)
+#a1 <- a1[order(a1)]
+
+colnames(w1)[2:111] <- a1
+
+w2 <- rbind(radiantwin, radiantloss)
+
+#w2 %>%
+colnames(w2) <- c("match_id", "win", "hero1", "hero2", "hero3", "hero4", "hero5")
+ w3 <- gather(w2,Hero,Heroid,starts_with("Hero")) #%>%
+  w3 <- mutate(w3, present = 1) #%>%
+  w3 <- select(w3, -Hero) #%>%
+  w3<- spread(w3, Heroid,present,fill = 0)
+  w3$match_id <- as.numeric(as.character(w3$match_id))
+arulesset<-w3
+rownames(arulesset) <- arulesset[,1]
+arulesset$match_id <- NULL
+arulesset <- discretize(arulesset, categories = 2)
+
+rules <- apriori(arulesset, parameter=list(support=0.01, confidence=0.5))
+
 #lookup table for hero names
