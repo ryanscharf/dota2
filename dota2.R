@@ -136,70 +136,72 @@ proc.time() - ptm
 #assign(paste("count", deparse(substitute(xz)) , sep=""), xz, envir=.GlobalEnv)
 #}
 
+##here's a function to sort heroes, such that the hero with the lower id is always Hero1 and the higher id
+##is Hero2.  This also allows us to make sure that hero pairs/permutations IE (AB and BA) are only counted
+##as a single pair rathere than two different ones. 
+
+sortheroes <- function(df){
+  fundf<- df
+  fundf$min <- apply(fundf[,3:4],1,min)
+  fundf$max <- apply(fundf[,3:4],1,max)
+  fundf$Hero1 <- NULL
+  fundf$Hero2 <- NULL
+  colnames(fundf) <- c("match_id", "radiant_win", "Hero1", "Hero2")
+  fundf <- plyr::count(fundf, vars = c("Hero1", "Hero2"))
+  fundf <<- arrange(fundf, desc(freq))  
+}
+
+
 ######long dumb version of permutation frequencies
 ###############################################################
 rwcounts <- radiantwinvals
   rwcounts$Hero1 <- as.numeric(as.character(rwcounts$Hero1))
   rwcounts$Hero2 <- as.numeric(as.character(rwcounts$Hero2))
-  rwcounts$min <- apply(rwcounts[,3:4],1,min)
-  rwcounts$max <- apply(rwcounts[,3:4],1,max)
-  rwcounts$Hero1 <- NULL
-  rwcounts$Hero2 <- NULL
-  colnames(rwcounts) <- c("match_id", "radiant_win", "Hero1", "Hero2")
-  rwcounts <- plyr::count(rwcounts, vars = c("Hero1", "Hero2"))
-  rwcounts <- arrange(rwcounts, desc(freq))
+  sortheroes(rwcounts)
+  rwcounts <- fundf
   
 rlcounts <- radiantlossvals
   rlcounts$Hero1 <- as.numeric(as.character(rlcounts$Hero1))
   rlcounts$Hero2 <- as.numeric(as.character(rlcounts$Hero2))
-  rlcounts$min <- apply(rlcounts[,3:4],1,min)
-  rlcounts$max <- apply(rlcounts[,3:4],1,max)
-  rlcounts$Hero1 <- NULL
-  rlcounts$Hero2 <- NULL
-  colnames(rlcounts) <- c("match_id", "radiant_win", "Hero1", "Hero2")
-  rlcounts <- plyr::count(rlcounts, vars = c("Hero1", "Hero2"))
-  rlcounts <- arrange(rlcounts, desc(freq))
+  sortheroes(rlcounts)
+  rlcounts <- fundf
   
 dwcounts <- direwinvals
   dwcounts$Hero1 <- as.numeric(as.character(dwcounts$Hero1))
   dwcounts$Hero2 <- as.numeric(as.character(dwcounts$Hero2))
-  dwcounts$min <- apply(dwcounts[,3:4],1,min)
-  dwcounts$max <- apply(dwcounts[,3:4],1,max)
-  dwcounts$Hero1 <- NULL
-  dwcounts$Hero2 <- NULL
-  colnames(dwcounts) <- c("match_id", "radiant_win", "Hero1", "Hero2")
-  dwcounts <- plyr::count(dwcounts, vars = c("Hero1", "Hero2"))
-  dwcounts <- arrange(dwcounts, desc(freq))
+  sortheroes(dwcounts)
+  dwcounts <- fundf
   
 dlcounts <- direlossvals
   dlcounts$Hero1 <- as.numeric(as.character(dlcounts$Hero1))
   dlcounts$Hero2 <- as.numeric(as.character(dlcounts$Hero2))
-  dlcounts$min <- apply(dlcounts[,3:4],1,min)
-  dlcounts$max <- apply(dlcounts[,3:4],1,max)
-  dlcounts$Hero1 <- NULL
-  dlcounts$Hero2 <- NULL
-  colnames(dlcounts) <- c("match_id", "radiant_win", "Hero1", "Hero2")
-  dlcounts <- plyr::count(dlcounts, vars = c("Hero1", "Hero2"))
-  dlcounts <- arrange(dlcounts, desc(freq))  
+  sortheroes(dlcounts)
+  dlcounts <- fundf
   
   
-overallwins <- merge(rwcounts, dwcounts, by=c("Hero1", "Hero2"))
+overallwins <- merge(rwcounts, dwcounts, by=c("Hero1", "Hero2"), all = TRUE)
+overallwins[is.na(overallwins)]<- 0
 overallwins$freq <- rowSums(overallwins[,3:4])
 overallwins[,3:4] <- NULL
   
-overallosses <- merge(rlcounts, dlcounts, by=c("Hero1", "Hero2"))
+overallosses <- merge(rlcounts, dlcounts, by=c("Hero1", "Hero2"), all=TRUE)
+overallosses[is.na(overallosses)] <- 0
 overallosses$freq <- rowSums(overallosses[,3:4])
 overallosses[,3:4] <- NULL
 
-overallwr <- merge(overallwins, overallosses, by=c("Hero1", "Hero2"))
+overallwr <- merge(overallwins, overallosses, by=c("Hero1", "Hero2"), all = TRUE)
+overallwr[is.na(overallwr)] <- 0
 colnames(overallwr) <- c("Hero1", "Hero2", "wins", "losses")
 overallwr$num_of_picks <- rowSums(overallwr[,3:4])
 overallwr <- mutate(overallwr, win_percentage = wins / num_of_picks)
+overallwr <- mutate(overallwr, pickpermedian = num_of_picks / median(overallwr$num_of_picks))
+overallwr$H1name <-  hero_names$localized_name[match(overallwr$Hero1, hero_names$hero_id)]
+overallwr$H2name <-  hero_names$localized_name[match(overallwr$Hero2, hero_names$hero_id)]
+overallwr <- overallwr[,c(1,8,2,9,3,4,5,6,7)]
   
-  
 
 
-
+extrafont::loadfonts(device="win")
 library("ggplot2")
 library("reshape2")
 library("viridis")
@@ -208,14 +210,13 @@ library("ggthemes")
    radiant_pairing_winm <- reshape2::acast(rwcounts, Hero1~Hero2, value.var = "freq", drop = FALSE)
 
    
-   
-   
    ##plottin
-gg <- ggplot(overallwr, aes(x=Hero1, y=Hero2, fill=win_percentage)) + geom_tile(color="white", size=0.4) + 
-   scale_fill_viridis(name="win rate (%)", label=comma) + coord_equal() + theme_tufte(base_family="Helvetica") +
-   scale_x_continuous(breaks = unique(rwcounts$Hero1), position = "top", sec.axis = dup_axis())  + 
-   scale_y_continuous(trans = "reverse", breaks = unique(rwcounts$Hero2), position = "top", sec.axis = dup_axis()) +
-   theme(axis.text.x = element_text(angle = 90, hjust = 1), plot.background = element_rect(fill = 'grey'), panel.grid.major = element_line(color= "black"))
+gg <- ggplot(overallwr, aes(x=Hero1, y=Hero2, fill=win_percentage)) + geom_tile(color="black", size=0.4) + 
+   scale_fill_viridis(name="pick % / median # of picks", label=comma) + coord_equal() + theme_tufte(base_family="Helvetica") +
+   scale_x_continuous(breaks = unique(overallwr$Hero1), position = "top", sec.axis = dup_axis())  + 
+   scale_y_continuous(trans = "reverse", breaks = unique(overallwr$Hero2), position = "top", sec.axis = dup_axis()) +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 8), plot.background = element_rect(fill = 'white'), panel.grid.major = element_line(color= "black"),
+         axis.text.y = element_text(size = 8))
 
 
 gg
@@ -367,6 +368,8 @@ t_knn <- test_set[,-1]
 t_knn[,2] <- as.factor(t_knn[,2])
 t_knn[,3] <- as.factor(t_knn[,3])
 
+w_knn.
+
 #shuffling up the rowws
 set.seed(34958)
 gp <- runif(nrow(w_knn))
@@ -375,11 +378,12 @@ gp <- runif(nrow(t_knn))
 t_knn <- t_knn[order(gp),]
 train_target <- w_knn[,1]
 test_target <- t_knn[,1]
-m1 <- knn(train = w_knn, test = t_knn, cl=train_target, k = 13)
+#have to exclude class labels or else you get error
+m1 <- knn(train = w_knn[,-1], test = t_knn[,-1], cl=w_knn$Win, k = 501, l = 15)
 
 
 
-#restructure for association rules
+##restructure for association rules
 #w1 <- as.data.frame(matrix(0, ncol = 111, nrow = length(winformation$match_id)))
 #colnames(w1)[1] <- "Win"
 #a1 <- unique(winformation$Hero1)
@@ -402,5 +406,53 @@ arulesset$match_id <- NULL
 arulesset <- discretize(arulesset, categories = 2)
 
 rules <- apriori(arulesset, parameter=list(support=0.01, confidence=0.5))
+
+
+#check comparison of some stats for different sizes of the dataset
+
+z1 <- winformation[1:281460,]
+z2 <- winformation[281461:562941,]
+z3 <- winformation[562942:844400,]
+sortheroes(z1)
+z1 <- fundf
+sortheroes(z2)
+z2 <- fundf
+sortheroes(z3)
+z3<- fundf
+
+
+par(mfrow=c(3,1))
+hist(z1$freq, xlab = "Number of times hero pair was picked", main = "Histogram of 1st 1/3rd")
+hist(z2$freq, xlab = "Number of times hero pair was picked", main = "Histogram of 2nd 1/3rd")
+hist(z3$freq, xlab = "Number of times hero pair was picked", main = "Histogram of 3rd 1/3rd")
+
+par(mfrow = c(1,3))
+boxplot(z1$freq, xlab = "1st 1/3rd median: ", sub = median(z1$freq))
+boxplot(z2$freq, xlab = "2nd 1/3rd median: ", sub = median(z2$freq))
+boxplot(z3$freq, xlab = "3rd 1/3rd median: ", sub = median(z3$freq))
+
+#they're practically identical
+#let's see what a progression of the data looks like
+z1 <- winformation[1:281460,]
+z2 <- winformation[1:562941,]
+z3 <- winformation[1:844400,]
+sortheroes(z1)
+z1 <- fundf
+sortheroes(z2)
+z2 <- fundf
+sortheroes(z3)
+z3<- fundf
+
+par(mfrow=c(3,1))
+hist(z1$freq, xlab = "Number of times hero pair was picked", main = "Histogram of 1/3rd of matches")
+hist(z2$freq, xlab = "Number of times hero pair was picked", main = "Histogram of 2/3rds of matches")
+hist(z3$freq, xlab = "Number of times hero pair was picked", main = "Histogram of all matches")
+
+par(mfrow = c(1,3))
+boxplot(z1$freq, xlab = "1/3rd of matches \n median: ", sub = median(z1$freq))
+boxplot(z2$freq, xlab = "2/3rds of matches \n median: ", sub = median(z2$freq))
+boxplot(z3$freq, xlab = "all matches \n median: ", sub = median(z3$freq))
+
+
 
 #lookup table for hero names
