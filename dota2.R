@@ -76,11 +76,11 @@ df$Win <- "False"
 winformation <- rbind(winformation, df)
 df <- direwinvals
 colnames(df) <- c("match_id", "Win", "Hero1", "Hero2")
-df$Win <- "True"
+df$Win <- TRUE
 winformation <- rbind(winformation, df)
 df <- radiantlossvals
 colnames(df) <- c("match_id", "Win", "Hero1", "Hero2")
-df$Win <- "False"
+df$Win <- FALSE
 winformation <- rbind(winformation, df)
 winformation <- arrange(winformation, match_id)
 
