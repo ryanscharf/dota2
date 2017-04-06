@@ -154,6 +154,7 @@ sortheroes <- function(df){
 
 ######long dumb version of permutation frequencies
 ###############################################################
+##Now slightly less dumb
 rwcounts <- radiantwinvals
   rwcounts$Hero1 <- as.numeric(as.character(rwcounts$Hero1))
   rwcounts$Hero2 <- as.numeric(as.character(rwcounts$Hero2))
@@ -338,18 +339,18 @@ direlossvals <- df
 #i need one big list of all the wins and losses without counting up anything
 test_set <- radiantwinvals
 colnames(test_set) <- c("match_id", "Win", "Hero1", "Hero2")
-test_set$Win <- "True"
+test_set$Win <- TRUE
 df <- direlossvals
 colnames(df) <- c("match_id", "Win", "Hero1", "Hero2")
-df$Win <- "False"
+df$Win <- FALSE
 test_set <- rbind(test_set, df)
 df <- direwinvals
 colnames(df) <- c("match_id", "Win", "Hero1", "Hero2")
-df$Win <- "True"
+df$Win <- TRUE
 test_set <- rbind(test_set, df)
 df <- radiantlossvals
 colnames(df) <- c("match_id", "Win", "Hero1", "Hero2")
-df$Win <- "False"
+df$Win <- FALSE
 test_set <- rbind(test_set, df)
 test_set$match_id <- as.numeric(as.character(test_set$match_id))
 test_set <- arrange(test_set, match_id)
