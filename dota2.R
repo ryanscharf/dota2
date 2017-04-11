@@ -456,4 +456,53 @@ boxplot(z3$freq, xlab = "all matches \n median: ", sub = median(z3$freq))
 
 
 
+#using overallwr to visualize pairs of top combinations.
+
+library(circlize)
+
+#opairsm <- radiant_pairing_winm
+#opairsm <- as.matrix(opairsm)
+#rownames(opairsm) <- colnames(opairsm)
+#groupNames <- hero_names[,2:3]
+#groupNames <-groupNames[-107,]
+#groupNames <- groupNames[-111,]
+#groupNames <- groupNames[,-1]
+#opairsm <- t(opairsm)
+#colnames(opairsm)<-groupNames$localized_name
+#chorddiag(opairsm, groupNames = rownames(opairsm), groupColors = palette(rainbow(6)))
+
+
+#opairsm <- read_csv("~/dota2/opairsm.csv")
+#opairsm <- as.data.frame(opairsm)
+#rownames(opairsm)<-groupNames$localized_name
+#colnames(opairsm)<-groupNames$localized_name
+#opairsm <- as.matrix(opairsm)
+#class(opairsm) <- "numeric"
+
+m <- overallwr[,c("H1name", "H2name", "win_percentage", "num_of_picks")]
+m <- subset(m, m[,4] > 36) #subset with first quartile  of pick rate as lower bound.  is the 27%th percentile of recorded pairs
+m <- arrange(m, desc(win_percentage))
+m <- m[,-4]
+m <- m[1:370,]             #subset with 60% win rate as lower bound.  is the 94th percentile of recorded pairs
+m <- m[1:95, ]             #subset with 65% win rate as lower bound.  is the 98th percentile of recorded pairs.
+
+chordDiagram(m, link.sort = TRUE, link.decreasing = FALSE, symmetric=TRUE, annotationTrack = "grid", preAllocateTracks = list(track.height = 0.1))
+circos.trackPlotRegion(track.index = 1, panel.fun = function(x, y) {
+  xlim = get.cell.meta.data("xlim")
+  xplot = get.cell.meta.data("xplot")
+  ylim = get.cell.meta.data("ylim")
+  sector.name = get.cell.meta.data("sector.index")
+  if(abs(xplot[2] - xplot[1]) < 20) {
+    circos.text(mean(xlim), ylim[1], sector.name, facing = "clockwise",
+                niceFacing = TRUE, adj = c(0, 0.5))
+  } else {
+    circos.text(mean(xlim), ylim[1], sector.name, facing = "inside",
+                niceFacing = TRUE, adj = c(0.5, 0))
+  }
+}, bg.border = NA)
+
+
+
+
+
 #lookup table for hero names
