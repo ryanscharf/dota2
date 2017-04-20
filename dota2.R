@@ -501,6 +501,76 @@ circos.trackPlotRegion(track.index = 1, panel.fun = function(x, y) {
   }
 }, bg.border = NA)
 
+#creating netowrk
+library(igraph)
+networktest <- overallwr[,c(2,4,7, 8)]
+networktest <- networktest[networktest$win_percentage > .65, ]
+g <- graph.data.frame(networktest, directed = FALSE)
+clp <- cluster_label_prop(g)
+c_scale <- colorRamp(c('red','yellow','cyan','blue'))
+networktest$scaledwr <- range01(networktest$win_percentage)
+networktest$scaledpicks <- range01(networktest$num_of_picks)
+E(g)$color = apply(c_scale(E(g)$scaledwr), 1, function(x) rgb(x[1]/255,x[2]/255,x[3]/255) )
+
+plot.igraph( g, vertex.shape = "none", 
+          vertex.label.font=2, vertex.label.color="black",
+          vertex.label.cex=.7, layout = layout.fruchterman.reingold, edge.width=E(g)$scaledpicks, edge.curved = .8, rescale = T)
+
+
+#creating miscellaneous visualizations
+herocount <- players[!players$match_id %in% badheroids$match_id,]
+herocount <- herocount[!herocount$match_id %in% badleavers$match_id,]
+herocount <- herocount[,c(1,3)]
+herocount <- plyr::count(herocount$hero_id)
+herocount <- arrange(herocount, desc(freq))
+
+#show hero counts
+herowins <- plyr::count(radiantwin$"0")
+herowins <- cbind(herowins, plyr::count(radiantwin$"1"), plyr::count(radiantwin$"2"), 
+                  plyr::count(radiantwin$"3"), plyr::count(radiantwin$"4"), plyr::count(direwin$"128"),
+                  plyr::count(direwin$"129"), plyr::count(direwin$"130"), plyr::count(direwin$"131"),
+                  plyr::count(direwin$"132"))
+herowins <- herowins[,c(1,2,4,6,8,10,12,14,16,18,20)]
+herowins <- mutate(herowins, sums = rowSums(herowins[, 2:11]))
+herowins <- herowins[,c(1,12)]
+
+#overlay hero winrates with a 50% line
+herolosses <- plyr::count(radiantloss$"0")
+herolosses <- cbind(herolosses, plyr::count(radiantloss$"1"), plyr::count(radiantloss$"2"), 
+                    plyr::count(radiantloss$"3"), plyr::count(radiantloss$"4"), plyr::count(direloss$"128"),
+                    plyr::count(direloss$"129"), plyr::count(direloss$"130"), plyr::count(direloss$"131"),
+                    plyr::count(direloss$"132"))
+herolosses <- herolosses[,c(1,2,4,6,8,10,12,14,16,18,20)]
+herolosses <- mutate(herolosses, sums = rowSums(herolosses[, 2:11]))
+herolosses <- herolosses[,c(1,12)]
+
+herocount <- merge(herocount, herowins, by = "x")
+herocount <- merge(herocount, herolosses, by = "x")
+colnames(herocount) <- c("Hero", "number_of_picks", "wins", "losses")
+herocount <- mutate(herocount, winrate = wins / number_of_picks)
+herocount$winrate <- round(herocount$winrate * 10^3)/10^3
+
+herocount$Hero <-  hero_names$localized_name[match(herocount$Hero, hero_names$hero_id)]
+
+#r = max(herocount$number_of_picks)
+r = 20000
+herocount <- mutate(herocount, scaledpct = r * herocount$winrate)
+
+#hero frequency plot
+ggplot(herocount, aes(x = reorder(Hero, -number_of_picks), y = number_of_picks)) + geom_bar(stat = "identity") + 
+  theme_few() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 8), plot.title = element_text(hjust=.5)) +
+  labs(x = "Hero", y = "Number of Picks") + ggtitle("Frequency of Hero Picks") + 
+  scale_y_continuous(breaks=seq(0, 20000, by=1000),expand = c(0,00)) +
+  coord_cartesian(ylim=c(0,20000))
+
+#hero frequency plot + winrate lines
+ggplot(herocount, aes(x = reorder(Hero, -number_of_picks), y = number_of_picks)) + geom_bar(stat = "identity") + 
+  theme_few() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 8), plot.title = element_text(hjust=.5)) +
+  labs(x = "Hero", y = "Number of Picks") + ggtitle("Frequency of Hero Picks") + 
+  geom_line(aes(x = reorder(Hero, -number_of_picks), y = scaledpct), group = 1, color = "navy", size = 1) + 
+  geom_line(aes(x = reorder(Hero, -number_of_picks), y = r/2), color = "red", group = 2, linetype = 2)+
+  scale_y_continuous(breaks=seq(0, 20000, by=1000),expand = c(0,00),  sec.axis = sec_axis(~., labels =  c("0%", "25%", "50%", "75%", "100%"),name = "Win Rate")) +
+  coord_cartesian(ylim=c(0,20000))
 
 
 
