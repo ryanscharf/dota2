@@ -524,7 +524,6 @@ herocount <- herocount[,c(1,3)]
 herocount <- plyr::count(herocount$hero_id)
 herocount <- arrange(herocount, desc(freq))
 
-#show hero counts
 herowins <- plyr::count(radiantwin$"0")
 herowins <- cbind(herowins, plyr::count(radiantwin$"1"), plyr::count(radiantwin$"2"), 
                   plyr::count(radiantwin$"3"), plyr::count(radiantwin$"4"), plyr::count(direwin$"128"),
@@ -534,7 +533,6 @@ herowins <- herowins[,c(1,2,4,6,8,10,12,14,16,18,20)]
 herowins <- mutate(herowins, sums = rowSums(herowins[, 2:11]))
 herowins <- herowins[,c(1,12)]
 
-#overlay hero winrates with a 50% line
 herolosses <- plyr::count(radiantloss$"0")
 herolosses <- cbind(herolosses, plyr::count(radiantloss$"1"), plyr::count(radiantloss$"2"), 
                     plyr::count(radiantloss$"3"), plyr::count(radiantloss$"4"), plyr::count(direloss$"128"),
@@ -564,13 +562,24 @@ ggplot(herocount, aes(x = reorder(Hero, -number_of_picks), y = number_of_picks))
   coord_cartesian(ylim=c(0,20000))
 
 #hero frequency plot + winrate lines
-ggplot(herocount, aes(x = reorder(Hero, -number_of_picks), y = number_of_picks)) + geom_bar(stat = "identity") + 
+ggplot(herocount, aes(x = reorder(Hero, -number_of_picks), y = number_of_picks)) + geom_bar(stat = "identity", alpha = .5) + 
   theme_few() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 8), plot.title = element_text(hjust=.5)) +
   labs(x = "Hero", y = "Number of Picks") + ggtitle("Frequency of Hero Picks") + 
-  geom_line(aes(x = reorder(Hero, -number_of_picks), y = scaledpct), group = 1, color = "navy", size = 1) + 
+  geom_point(aes(x = reorder(Hero, -number_of_picks), y = scaledpct), group = 1, color = "navy", size = 1) + 
   geom_line(aes(x = reorder(Hero, -number_of_picks), y = r/2), color = "red", group = 2, linetype = 2)+
   scale_y_continuous(breaks=seq(0, 20000, by=1000),expand = c(0,00),  sec.axis = sec_axis(~., labels =  c("0%", "25%", "50%", "75%", "100%"),name = "Win Rate")) +
   coord_cartesian(ylim=c(0,20000))
+
+#
+library(scales)
+ggplot(tournamentsyearly, aes(x = Year, y= Prize_Pool)) + geom_bar(stat = "identity") + 
+  theme_few() + labs(x = "Year", y = "Prize Pool ($)") + 
+  scale_y_continuous(expand = c(0,00), labels = comma, breaks=seq(0, 80000000, by=10000000), sec.axis = sec_axis(~. / 80000000 * 100, name = "Cumulative Total of Whole (%)")) + 
+  scale_x_continuous(breaks = tournamentsyearly$Year,labels = tournamentsyearly$Year) +
+  geom_point(aes(y = Cumulative, group = '1'), stat = "identity") + geom_line(aes(y = Cumulative, group = '1')) + coord_cartesian(ylim=c(0,85000000))
+
+
+
 
 
 
