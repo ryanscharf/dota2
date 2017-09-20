@@ -1,3 +1,14 @@
+library("tidyr")
+library("rgexf")
+library("dplyr")
+library("ggplot2")
+library("reshape2")
+library("viridis")
+library("scales")
+library("ggthemes")
+library("circlize")
+
+
 #keep relevant information from matches
 matches_i <- match[, c(1,10)]
 
@@ -16,7 +27,7 @@ playershero <- playershero[, c(1,3,4)]
 playershero$radiant_win <- matches_i[match(playershero$match_id, matches_i$match_id), 2]
 
 #reshape the data from long to wide format with tidyr
-library("tidyr")
+
 playershero <- spread(playershero, player_slot, hero_id)
 
 #create results matrix for radiant and dire
@@ -28,7 +39,6 @@ colnames(direwinrate) <- c(hero_names$hero_id)
 rownames(direwinrate) <- c(hero_names$hero_id)
 
 #create subsets for radiant wins/losses, and dire wins/losses
-library("dplyr")
 radiantwin <- filter(playershero, radiant_win == "True")
 radiantloss <- filter(playershero, radiant_win == "False")
 direwin <- filter(playershero, radiant_win == "False")
@@ -203,26 +213,22 @@ overallwr <- overallwr[,c(1,8,2,9,3,4,5,6,7)]
 
 
 extrafont::loadfonts(device="win")
-library("ggplot2")
-library("reshape2")
-library("viridis")
-library("scales")
-library("ggthemes")
+
    radiant_pairing_winm <- reshape2::acast(rwcounts, Hero1~Hero2, value.var = "freq", drop = FALSE)
 
    
    ##plottin
-gg <- ggplot(overallwr, aes(x=Hero1, y=Hero2, fill=win_percentage)) + geom_tile(color="black", size=0.4) + 
-   scale_fill_viridis(name="pick % / median # of picks", label=comma) + coord_equal() + theme_tufte(base_family="Helvetica") +
-   scale_x_continuous(breaks = unique(overallwr$Hero1), position = "top", sec.axis = dup_axis())  + 
-   scale_y_continuous(trans = "reverse", breaks = unique(overallwr$Hero2), position = "top", sec.axis = dup_axis()) +
-   theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 8), plot.background = element_rect(fill = 'white'), panel.grid.major = element_line(color= "black"),
-         axis.text.y = element_text(size = 8))
+gg <- ggplot(overallwr, aes(x=Hero1, y=Hero2, fill=pickpermedian)) + geom_tile(color="black", size=0.4) + 
+   scale_fill_viridis(name="Number of Picks / Median)", label=comma) + coord_equal() + theme_few() +
+   scale_x_continuous(expand = c(0,00), breaks = unique(overallwr$Hero1), labels = unique(overallwr$H1name), position = "top", sec.axis = dup_axis())  + 
+   scale_y_continuous(expand = c(0,00), trans = "reverse", breaks = unique(overallwr$Hero2), labels = unique(overallwr$H2name), position = "top", sec.axis = dup_axis()) +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=.5, size = 8), plot.background = element_rect(fill = 'white'), 
+         panel.grid.major = element_line(color= "black"), axis.text.y = element_text(size = 8)) + ggtitle("Occurance of Hero Pairings Compared to Median")
 
 
 gg
 
-#ptm <- proc.time()
+s#ptm <- proc.time()
 #proc.time() - ptm
 
 #radiant win%
@@ -458,7 +464,6 @@ boxplot(z3$freq, xlab = "all matches \n median: ", sub = median(z3$freq))
 
 #using overallwr to visualize pairs of top combinations.
 
-library(circlize)
 
 #opairsm <- radiant_pairing_winm
 #opairsm <- as.matrix(opairsm)
@@ -480,12 +485,37 @@ library(circlize)
 #class(opairsm) <- "numeric"
 
 m <- overallwr[,c("H1name", "H2name", "win_percentage", "num_of_picks")]
-m <- subset(m, m[,4] > 36) #subset with first quartile  of pick rate as lower bound.  is the 27%th percentile of recorded pairs
+mp <- arrange(m, desc(num_of_picks))
+mp <- subset(mp, mp[,4] > 696)
+m <- subset(m, m[,4] > 37) #subset with first quartile  of pick rate as lower bound.  is the 27%th percentile of recorded pairs
 m <- arrange(m, desc(win_percentage))
 m <- m[,-4]
-m <- m[1:370,]             #subset with 60% win rate as lower bound.  is the 94th percentile of recorded pairs
-m <- m[1:95, ]             #subset with 65% win rate as lower bound.  is the 98th percentile of recorded pairs.
+m60 <- m[1:370,]             #subset with 60% win rate as lower bound.  is the 94th percentile of recorded pairs
+m65 <- m[1:95, ]             #subset with 65% win rate as lower bound.  is the 98th percentile of recorded pairs.
 
+
+
+#60%wr
+#CairoWin()
+CairoPNG("60pct.png",8,8, res = 300, units = "in", bg = "white",pointsize = 8)
+chordDiagram(m60, link.sort = TRUE, link.decreasing = FALSE, symmetric=TRUE, annotationTrack = "grid", preAllocateTracks = list(track.height = 0.1))
+circos.trackPlotRegion(track.index = 1, panel.fun = function(x, y) {
+  xlim = get.cell.meta.data("xlim")
+  xplot = get.cell.meta.data("xplot")
+  ylim = get.cell.meta.data("ylim")
+  sector.name = get.cell.meta.data("sector.index")
+  if(abs(xplot[2] - xplot[1]) < 20) {
+    circos.text(mean(xlim), ylim[1], sector.name, facing = "clockwise",
+                niceFacing = TRUE, adj = c(0, 0.5))
+  } else {
+    circos.text(mean(xlim), ylim[1], sector.name, facing = "inside",
+                niceFacing = TRUE, adj = c(0.5, 0))
+  }
+}, bg.border = NA)
+dev.off()
+
+#all heroes
+CairoPNG("apllpct.png",8,8, res = 300, units = "in", bg = "white",pointsize = 8)
 chordDiagram(m, link.sort = TRUE, link.decreasing = FALSE, symmetric=TRUE, annotationTrack = "grid", preAllocateTracks = list(track.height = 0.1))
 circos.trackPlotRegion(track.index = 1, panel.fun = function(x, y) {
   xlim = get.cell.meta.data("xlim")
@@ -500,21 +530,66 @@ circos.trackPlotRegion(track.index = 1, panel.fun = function(x, y) {
                 niceFacing = TRUE, adj = c(0.5, 0))
   }
 }, bg.border = NA)
+dev.off()
+
+#65% wr
+CairoPNG("65pct.png",8,8, res = 300, units = "in", bg = "white",pointsize = 8)
+chordDiagram(m65, link.sort = TRUE, link.decreasing = FALSE, symmetric=TRUE, annotationTrack = "grid", preAllocateTracks = list(track.height = 0.1))
+circos.trackPlotRegion(track.index = 1, panel.fun = function(x, y) {
+  xlim = get.cell.meta.data("xlim")
+  xplot = get.cell.meta.data("xplot")
+  ylim = get.cell.meta.data("ylim")
+  sector.name = get.cell.meta.data("sector.index")
+  if(abs(xplot[2] - xplot[1]) < 20) {
+    circos.text(mean(xlim), ylim[1], sector.name, facing = "clockwise",
+                niceFacing = TRUE, adj = c(0, 0.5))
+  } else {
+    circos.text(mean(xlim), ylim[1], sector.name, facing = "inside",
+                niceFacing = TRUE, adj = c(0.5, 0))
+  }
+}, bg.border = NA)
+dev.off()
+
+#top 2% picks
+CairoPNG("2pctpicks.png",8,8, res = 300, units = "in", bg = "white",pointsize = 8)
+chordDiagram(mp, link.sort = TRUE, link.decreasing = FALSE, symmetric=TRUE, annotationTrack = "grid", preAllocateTracks = list(track.height = 0.1))
+circos.trackPlotRegion(track.index = 1, panel.fun = function(x, y) {
+  xlim = get.cell.meta.data("xlim")
+  xplot = get.cell.meta.data("xplot")
+  ylim = get.cell.meta.data("ylim")
+  sector.name = get.cell.meta.data("sector.index")
+  if(abs(xplot[2] - xplot[1]) < 20) {
+    circos.text(mean(xlim), ylim[1], sector.name, facing = "clockwise",
+                niceFacing = TRUE, adj = c(0, 0.5))
+  } else {
+    circos.text(mean(xlim), ylim[1], sector.name, facing = "inside",
+                niceFacing = TRUE, adj = c(0.5, 0))
+  }
+}, bg.border = NA)
+dev.off()
+
+
+
+
+
+
 
 #creating netowrk
 library(igraph)
 networktest <- overallwr[,c(2,4,7, 8)]
 networktest <- networktest[networktest$win_percentage > .65, ]
+networktest <- networktest[networktest$num_of_picks > 37, ]
 g <- graph.data.frame(networktest, directed = FALSE)
 clp <- cluster_label_prop(g)
-c_scale <- colorRamp(c('red','yellow','cyan','blue'))
+c_scale <- colorRamp(c('red','blue'))
 networktest$scaledwr <- range01(networktest$win_percentage)
 networktest$scaledpicks <- range01(networktest$num_of_picks)
 E(g)$color = apply(c_scale(E(g)$scaledwr), 1, function(x) rgb(x[1]/255,x[2]/255,x[3]/255) )
 
 plot.igraph( g, vertex.shape = "none", 
           vertex.label.font=2, vertex.label.color="black",
-          vertex.label.cex=.7, layout = layout.fruchterman.reingold, edge.width=E(g)$scaledpicks, edge.curved = .8, rescale = T)
+          vertex.label.cex=.7, layout = layout.fruchterman.reingold,
+          edge.width=E(g)$scaledpicks*10, edge.curved = .1, rescale = T)
 
 
 #creating miscellaneous visualizations
@@ -570,18 +645,24 @@ ggplot(herocount, aes(x = reorder(Hero, -number_of_picks), y = number_of_picks))
   scale_y_continuous(breaks=seq(0, 20000, by=1000),expand = c(0,00),  sec.axis = sec_axis(~., labels =  c("0%", "25%", "50%", "75%", "100%"),name = "Win Rate")) +
   coord_cartesian(ylim=c(0,20000))
 
-#
+#pareto chart of tournament prize pools
 library(scales)
 ggplot(tournamentsyearly, aes(x = Year, y= Prize_Pool)) + geom_bar(stat = "identity") + 
   theme_few() + labs(x = "Year", y = "Prize Pool ($)") + 
   scale_y_continuous(expand = c(0,00), labels = comma, breaks=seq(0, 80000000, by=10000000), sec.axis = sec_axis(~. / 80000000 * 100, name = "Cumulative Total of Whole (%)")) + 
   scale_x_continuous(breaks = tournamentsyearly$Year,labels = tournamentsyearly$Year) +
-  geom_point(aes(y = Cumulative, group = '1'), stat = "identity") + geom_line(aes(y = Cumulative, group = '1')) + coord_cartesian(ylim=c(0,85000000))
+  geom_point(aes(y = Cumulative, group = '1'), stat = "identity") + geom_line(aes(y = Cumulative, group = '1')) + coord_cartesian(ylim=c(0,85000000)) + ggtitle("Tournament Prize Pools")
 
 
+#trying out gephi
+overallwins <- winformation[winformation$Win == TRUE, ]
+overallwins$Hero1 <- hero_names$localized_name[match(overallwins$Hero1, hero_names$hero_id)]
+overallwins$Hero2 <- hero_names$localized_name[match(overallwins$Hero2, hero_names$hero_id)]
 
-
-
-
-
-#lookup table for hero names
+edges = data.frame(from=overallwins$Hero1,to=overallwins$Hero2,stringsAsFactors = F) %>% group_by(from,to) %>% dplyr::summarize(value = n())
+nodes <- data.frame(id = unique(c(edges$from, edges$to)), label = unique(c(edges$from, edges$to)), stringsAsFactors = F) %>% tbl_df
+rt_graph <- make_empty_graph() + vertices(nodes$id) + edges(as.vector(rbind(edges$from, edges$to)), weight = edges$value)
+rg.gexf <- igraph.to.gexf(rt_graph)
+f <- file("dota.gexf")
+writeLines(rg.gexf$graph, con = f)
+close(f)
